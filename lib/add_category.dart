@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert' as convert;
 
+// domain of your server
 const String _baseURL = 'https://csci410fall2023.000webhostapp.com';
+// used to retrieve the key later
 EncryptedSharedPreferences _encryptedData = EncryptedSharedPreferences();
 
 class AddCategory extends StatefulWidget {
@@ -15,9 +17,12 @@ class AddCategory extends StatefulWidget {
 }
 
 class _AddCategoryState extends State<AddCategory> {
+  // creates a unique key to be used by the form
+  // this key is necessary for validation
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   TextEditingController _controllerID = TextEditingController();
   TextEditingController _controllerName = TextEditingController();
+  // the below variable is used to display the progress bar when retrieving data
   bool _loading = false;
 
 
@@ -46,10 +51,11 @@ class _AddCategoryState extends State<AddCategory> {
         ],
           title: const Text('Add Category'),
           centerTitle: true,
+          // the below line disables the back button on the AppBar
           automaticallyImplyLeading: false,
     ),
         body: Center(child: Form(
-      key: _formKey,
+      key: _formKey, // key to uniquely identify the form when performing validation
       child: Column(
         children: <Widget>[
           const SizedBox(height: 10),
@@ -82,7 +88,9 @@ class _AddCategoryState extends State<AddCategory> {
           )),
           const SizedBox(height: 10),
           ElevatedButton(
-              onPressed: () {
+            // we need to prevent the user from sending another request, while current
+            // request is being processed
+              onPressed: _loading ? null : () { // disable button while loading
                 if (_formKey.currentState!.validate()) {
                   setState(() {
                     _loading = true;
@@ -100,18 +108,22 @@ class _AddCategoryState extends State<AddCategory> {
   }
 }
 
+// below function sends the cid, name and key using http post to the REST service
 void saveCategory(Function(String text) update, int cid, String name) async {
   try {
+    // we need to first retrieve and decrypt the key
     String myKey = await _encryptedData.getString('myKey');
+    // send a JSON object using http post
       final response = await http.post(
           Uri.parse('$_baseURL/save.php'),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
-          },
+          }, // convert the cid, name and key to a JSON object
           body: convert.jsonEncode(<String, String>{
             'cid': '$cid', 'name': name, 'key': myKey
           })).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
+        // if successful, call the update function
         update(response.body);
       }
   }

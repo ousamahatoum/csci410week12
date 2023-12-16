@@ -10,12 +10,13 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  final TextEditingController _controller = TextEditingController();
+  final TextEditingController _controller = TextEditingController(); // hold user key from TextField
   final EncryptedSharedPreferences _encryptedData =
-      EncryptedSharedPreferences();
+      EncryptedSharedPreferences(); // used to store the key later
 
+  // this function opens the Add Category page, if we managed to save key successfully
   void update(bool success) {
-    if (success) {
+    if (success) { // open the Add Category page if successful
       Navigator.of(context)
           .push(MaterialPageRoute(builder: (context) => const AddCategory()));
     } else {
@@ -23,14 +24,17 @@ class _HomeState extends State<Home> {
           .showSnackBar(const SnackBar(content: Text('failed to set key')));
     }
   }
-
+  // adds key to EncryptedSharedPreferences
   checkLogin() async {
+    // make sure the key is not empty
     if (_controller.text.toString().trim() == '') {
       update(false);
     } else {
+      // attempt to save key. Saving the key and encrypting it takes time.
+      // so it is done asynchronously
       _encryptedData
           .setString('myKey', _controller.text.toString())
-          .then((bool success) {
+          .then((bool success) { // then is equivalent to using wait
         if (success) {
           update(true);
         } else {
@@ -40,6 +44,8 @@ class _HomeState extends State<Home> {
     }
   }
 
+  // opens the Add Category page, if the key exists. It is called when
+  // the application starts
   void checkSavedData() async {
     _encryptedData.getString('myKey').then((String myKey) {
       if (myKey.isNotEmpty) {
@@ -50,10 +56,10 @@ class _HomeState extends State<Home> {
     });
   }
 
-
   @override
   void initState() {
     super.initState();
+    // call the below function to check if key exists
     checkSavedData();
   }
 
@@ -70,9 +76,10 @@ class _HomeState extends State<Home> {
         SizedBox(
             width: 200,
             child: TextField(
+              // replace typed text with * for passwords
               obscureText: true,
-              enableSuggestions: false,
-              autocorrect: false,
+              enableSuggestions: false, // disable suggestions for password
+              autocorrect: false, // disable auto correct for password
               controller: _controller,
               decoration: const InputDecoration(
                   border: OutlineInputBorder(), hintText: 'Enter Key'),
